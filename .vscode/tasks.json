@@ -22,7 +22,8 @@
 				"env": {
 					"FLASK_APP": "pat_test.py",
 					"CONFIG": "myconfig.py"
-				}
+				},
+				"ports": [{"hostPort":65010,"containerPort": 65010}]
 			},
 			"python": {
 				"args": [
