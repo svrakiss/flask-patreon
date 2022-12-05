@@ -20,7 +20,8 @@
 			],
 			"dockerRun": {
 				"env": {
-					"FLASK_APP": "pat_test.py"
+					"FLASK_APP": "pat_test.py",
+					"CONFIG": "myconfig.py"
 				}
 			},
 			"python": {

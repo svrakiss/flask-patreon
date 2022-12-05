@@ -4,3 +4,4 @@ class MyApp(Flask):
         Flask.__init__(self,__name__)
 
 app = MyApp()
+app.config.from_envvar('CONFIG')
