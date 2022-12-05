@@ -1,0 +1,10 @@
+version: '3.4'
+
+services:
+  flaskpatreon:
+    image: flaskpatreon
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - 65010:65010

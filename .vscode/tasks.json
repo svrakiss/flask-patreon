@@ -1,0 +1,39 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "docker-build",
+			"label": "docker-build",
+			"platform": "python",
+			"dockerBuild": {
+				"tag": "flaskpatreon:latest",
+				"dockerfile": "${workspaceFolder}/Dockerfile",
+				"context": "${workspaceFolder}",
+				"pull": true
+			}
+		},
+		{
+			"type": "docker-run",
+			"label": "docker-run: debug",
+			"dependsOn": [
+				"docker-build"
+			],
+			"dockerRun": {
+				"env": {
+					"FLASK_APP": "pat_test.py"
+				}
+			},
+			"python": {
+				"args": [
+					"run",
+					"--no-debugger",
+					"--host",
+					"0.0.0.0",
+					"--port",
+					"65010"
+				],
+				"module": "flask"
+			}
+		}
+	]
+}
