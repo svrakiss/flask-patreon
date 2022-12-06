@@ -1,7 +1,7 @@
 import patreon
 from flask import request
 from __init__ import app;
-
+from apiv2 import API2;
 creator_id = None     # Replace with your data
 REDIRECT_URI = "http://localhost:65010/v2/oauth/redirect"
 @app.route('/v2/oauth/redirect',endpoint='xxxx',methods=['GET','POST'])
@@ -12,9 +12,9 @@ def oauth_redirect():
     if (access_token is None):
         return 'Denied';
     api_client = patreon.API(access_token)
-    user_response = api_client.fetch_user()
-    user = user_response.data()
-    pledges = user.relationship('pledges')
+    # user_response = api_client.fetch_user()
+    # user = user_response.data()
+    # pledges = user.relationship('pledges')
     return 'Hey'
 
 @app.route('/gimme_token',methods=['POST'])
@@ -31,9 +31,11 @@ def auth_resource():
 
 @app.route('/member/',methods=['GET'])
 def find_by_discord_id():
-    discord_id=request.args.get('discord_id')
-    patron_id=request.args.get('patron_id')
-
+    discord_id=request.values.get('discord_id','None')
+    patron_id=request.values.get('patron_id','None')
+    if(patron_id is not None):
+        return find_by_patron_id(patron_id,includes=request.values.get('include',None)
+    ,fields=request.values.get('fields',None));
     grab_discord_id = lambda x: x.attribute('social_connections').get('discord').get('user_id',None)
 
     access_token = app.config.get('TOKENS')['access_token']
@@ -48,8 +50,21 @@ def find_by_discord_id():
         return 'Nope';
     return 'Nope';
     
-            
-    
+def find_by_patron_id(patron_id,includes=None,fields=None):
+    access_token = app.config.get('TOKENS')['access_token']
+    api_client = API2(access_token)
+    member_response=api_client.fetch_patron_by_id(member_id=patron_id,includes=includes,fields=fields)
+
+    return member_response.data().json_data
+
+@app.route('/campaign/members')
+def get_campaign_members():
+    access_token = app.config.get('TOKENS')['access_token']
+    api_client = API2(access_token)
+    member_response = api_client.fetch_campaign_patrons(campaign_id=request.values.get('campaign_id'),includes=request.values.get('include',None)
+    ,fields=request.values.get('fields',None));
+    return [x.json_data for x in member_response.data()]
+
 
 def make_authorization_url():
 	# Generate a random string for the state parameter
