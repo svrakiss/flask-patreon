@@ -24,18 +24,17 @@ def auth_resource():
     tokens = oauth_client.get_tokens(request.values.get('code'), REDIRECT_URI)
     return tokens
 
-# @app.route('/')
-# def homepage():
-# 	text = '<a href="%s">Authenticate with reddit</a>'
-# 	return text % make_authorization_url()
+@app.route('/')
+def homepage():
+	return "Hi"
 
 @app.route('/member/',methods=['GET'])
 def find_by_discord_id():
-    discord_id=request.values.get('discord_id','None')
-    patron_id=request.values.get('patron_id','None')
+    discord_id=request.values.get('discord_id',None)
+    patron_id=request.values.get('patron_id',None)
     if(patron_id is not None):
-        return find_by_patron_id(patron_id,includes=request.values.get('include',None)
-    ,fields=request.values.get('fields',None));
+        return find_by_patron_id(patron_id,includes=request.json.get('include',None)
+    ,fields=request.json.get('fields',None));
     grab_discord_id = lambda x: x.attribute('social_connections').get('discord').get('user_id',None)
 
     access_token = app.config.get('TOKENS')['access_token']
@@ -61,8 +60,8 @@ def find_by_patron_id(patron_id,includes=None,fields=None):
 def get_campaign_members():
     access_token = app.config.get('TOKENS')['access_token']
     api_client = API2(access_token)
-    member_response = api_client.fetch_campaign_patrons(campaign_id=request.values.get('campaign_id'),includes=request.values.get('include',None)
-    ,fields=request.values.get('fields',None));
+    member_response = api_client.fetch_campaign_patrons(campaign_id=request.values.get('campaign_id'),includes=request.json.get('include',None)
+    ,fields=request.json.get('fields',None));
     return [x.json_data for x in member_response.data()]
 
 
