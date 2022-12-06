@@ -33,8 +33,10 @@ def find_by_discord_id():
     discord_id=request.values.get('discord_id',None)
     patron_id=request.values.get('patron_id',None)
     if(patron_id is not None):
-        return find_by_patron_id(patron_id,includes=request.json.get('include',None)
-    ,fields=request.json.get('fields',None));
+        if(request.is_json):
+            return find_by_patron_id(patron_id,includes=request.json.get('include',None),fields=request.json.get('fields',None));
+        else:
+            return find_by_patron_id(patron_id=patron_id);
     grab_discord_id = lambda x: x.attribute('social_connections').get('discord').get('user_id',None)
 
     access_token = app.config.get('TOKENS')['access_token']
@@ -49,7 +51,7 @@ def find_by_discord_id():
         return 'Nope';
     return 'Nope';
     
-def find_by_patron_id(patron_id,includes=None,fields=None):
+def find_by_patron_id(patron_id,includes=['currently_entitled_tiers'],fields={'tier':['title','description'],'member':['full_name','patron_status']}):
     access_token = app.config.get('TOKENS')['access_token']
     api_client = API2(access_token)
     member_response=api_client.fetch_patron_by_id(member_id=patron_id,includes=includes,fields=fields)
