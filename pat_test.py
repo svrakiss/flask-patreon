@@ -4,18 +4,26 @@ from __init__ import app;
 
 creator_id = None     # Replace with your data
 REDIRECT_URI = "http://localhost:65010/v2/oauth/redirect"
-# @app.route('/v2/oauth/redirect',endpoint='xxxx' )
-# def oauth_redirect():
-#     oauth_client = patreon.OAuth(client_id, client_secret)
-#     tokens = oauth_client.get_tokens(request.args.get('code'), '/v2/oauth/redirect')
-#     access_token = tokens['access_token']
+@app.route('/v2/oauth/redirect',endpoint='xxxx',methods=['GET','POST'])
+def oauth_redirect():
+    oauth_client = patreon.OAuth(app.config['CLIENT_ID'], app.config['CLIENT_SECRET'])
+    tokens = oauth_client.get_tokens(request.values.get('code'), REDIRECT_URI)
+    access_token = tokens.get('access_token',None)
+    if (access_token is None):
+        return 'Denied';
+    api_client = patreon.API(access_token)
+    user_response = api_client.fetch_user()
+    user = user_response.data()
+    pledges = user.relationship('pledges')
+    return 'Hey'
 
-#     api_client = patreon.API(access_token)
-#     user_response = api_client.fetch_user()
-#     user = user_response.data()
-#     pledges = user.relationship('pled ges')
-#     pledge = pledges[0] if pledges and len(pledges) > 0 else None
-#     print(pledge)
+@app.route('/gimme_token',methods=['POST'])
+def auth_resource():
+    oauth_client = patreon.OAuth(app.config['CLIENT_ID'], app.config['CLIENT_SECRET'])
+    # request.
+    tokens = oauth_client.get_tokens(request.values.get('code'), REDIRECT_URI)
+    return tokens
+
 # @app.route('/')
 # def homepage():
 # 	text = '<a href="%s">Authenticate with reddit</a>'
