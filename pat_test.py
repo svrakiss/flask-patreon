@@ -2,7 +2,6 @@ import patreon
 from flask import request
 from __init__ import app;
 from apiv2 import API2;
-creator_id = None     # Replace with your data
 REDIRECT_URI = "http://localhost:65010/v2/oauth/redirect"
 @app.route('/v2/oauth/redirect',endpoint='xxxx',methods=['GET','POST'])
 def oauth_redirect():
@@ -12,9 +11,6 @@ def oauth_redirect():
     if (access_token is None):
         return 'Denied';
     api_client = patreon.API(access_token)
-    # user_response = api_client.fetch_user()
-    # user = user_response.data()
-    # pledges = user.relationship('pledges')
     return 'Hey'
 
 @app.route('/gimme_token',methods=['POST'])
