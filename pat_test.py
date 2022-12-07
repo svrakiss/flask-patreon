@@ -52,7 +52,7 @@ def find_by_discord_id():
 
     grab_discord_id = lambda x: x.attribute('social_connections').get('discord').get('user_id',None)
     has_discord = lambda x: x.attribute('social_connections').get('discord') is not None;
-    access_token = app.config.get('TOKENS')['access_token']
+    access_token = grab_token()
     api_client = API2(access_token)
 
     if(discord_id is not None):
@@ -89,7 +89,7 @@ def find_by_discord_id():
     return 'Cannot find member';
     
 def find_by_patron_id(patron_id,includes=['currently_entitled_tiers'],fields={'tier':['title','description'],'member':['full_name','patron_status']}):
-    access_token = app.config.get('TOKENS')['access_token']
+    access_token = grab_token()
     api_client = API2(access_token)
     member_response=api_client.fetch_patron_by_id(member_id=patron_id,includes=includes,fields=fields)
 
@@ -98,7 +98,7 @@ def find_by_patron_id(patron_id,includes=['currently_entitled_tiers'],fields={'t
 
 @app.route('/campaign/members')
 def get_campaign_members():
-    access_token = app.config.get('TOKENS')['access_token']
+    access_token = grab_token()
     api_client = API2(access_token)
     if request.is_json:
         member_response = api_client.fetch_campaign_patrons(campaign_id=request.values.get('campaign_id'),includes=request.json.get('include',None)
@@ -106,6 +106,9 @@ def get_campaign_members():
     else:
         member_response = api_client.fetch_campaign_patrons(campaign_id=request.values.get('campaign_id'))
     return [x.json_data for x in member_response.data()]
+
+def grab_token():
+    return app.config.get('TOKENS')['access_token']
 
 
 def make_authorization_url():
