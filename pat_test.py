@@ -20,7 +20,6 @@ def oauth_redirect():
 @app.route('/gimme_token',methods=['POST'])
 def auth_resource():
     oauth_client = patreon.OAuth(app.config['CLIENT_ID'], app.config['CLIENT_SECRET'])
-    # request.
     tokens = oauth_client.get_tokens(request.values.get('code'), REDIRECT_URI)
     return tokens
 
@@ -32,6 +31,7 @@ def homepage():
 def find_by_discord_id():
     discord_id=request.values.get('discord_id',None)
     patron_id=request.values.get('patron_id',None)
+    campaign_id=request.values.get('campaign_id',None)
     if(patron_id is not None):
         if(request.is_json):
             return find_by_patron_id(patron_id,includes=request.json.get('include',None),fields=request.json.get('fields',None));
@@ -40,14 +40,17 @@ def find_by_discord_id():
     grab_discord_id = lambda x: x.attribute('social_connections').get('discord').get('user_id',None)
 
     access_token = app.config.get('TOKENS')['access_token']
-    api_client = patreon.API(access_token)
-    user_response = api_client.fetch_user()
-    user = user_response.data()
-    pledges = user.relationship('pledges')
+    api_client = API2(access_token)
+
     if(discord_id is not None):
-        for x in pledges:
-            if(discord_id ==grab_discord_id(x.relationship('patron'))):
-                return x.attributes()
+        if(campaign_id is not None):
+            campaign_members = api_client.fetch_campaign_patrons(campaign_id=campaign_id,includes=['currently_entitled_tiers','user'],fields={
+           'member':['full_name','patron_status'],'tier':['title','discord_role_ids'],'user':['social_connections']})
+        else:
+            campaign_members=9
+        for x in campaign_members.data():
+            if(discord_id ==grab_discord_id(x.relationship('user'))):
+                return x.json_data;
         return 'Nope';
     return 'Nope';
     
@@ -58,12 +61,16 @@ def find_by_patron_id(patron_id,includes=['currently_entitled_tiers'],fields={'t
 
     return member_response.data().json_data
 
+
 @app.route('/campaign/members')
 def get_campaign_members():
     access_token = app.config.get('TOKENS')['access_token']
     api_client = API2(access_token)
-    member_response = api_client.fetch_campaign_patrons(campaign_id=request.values.get('campaign_id'),includes=request.json.get('include',None)
-    ,fields=request.json.get('fields',None));
+    if request.is_json:
+        member_response = api_client.fetch_campaign_patrons(campaign_id=request.values.get('campaign_id'),includes=request.json.get('include',None)
+        ,fields=request.json.get('fields',None));
+    else:
+        member_response = api_client.fetch_campaign_patrons(campaign_id=request.values.get('campaign_id'))
     return [x.json_data for x in member_response.data()]
 
 
