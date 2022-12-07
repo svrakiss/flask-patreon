@@ -32,27 +32,65 @@ def find_by_discord_id():
     discord_id=request.values.get('discord_id',None)
     patron_id=request.values.get('patron_id',None)
     campaign_id=request.values.get('campaign_id',None)
+    if(request.is_json):
+        includes=request.json.get('include',[])
+        fields = request.json.get('fields',{})
+        if(len(includes) == 0):
+            includes=['currently_entitled_tiers']
+        if(len(fields)==0 or not isinstance(fields,dict)):
+            fields={
+                'member':['full_name','patron_status'],'tier':['title','discord_role_ids']}
+    else:
+        includes=['currently_entitled_tiers']
+        fields={'member':['full_name','patron_status'],'tier':['title','discord_role_ids']}
     if(patron_id is not None):
         if(request.is_json):
-            return find_by_patron_id(patron_id,includes=request.json.get('include',None),fields=request.json.get('fields',None));
+            return find_by_patron_id(patron_id,includes=includes,fields=fields);
         else:
             return find_by_patron_id(patron_id=patron_id);
-    grab_discord_id = lambda x: x.attribute('social_connections').get('discord').get('user_id',None)
+    else:
+        includes = set(includes)
+        includes.add('user')
+        fields.update({'user':set(fields.get('user',{}))})
+        fields.get('user').add('social_connections')
 
+    grab_discord_id = lambda x: x.attribute('social_connections').get('discord').get('user_id',None)
+    has_discord = lambda x: x.attribute('social_connections').get('discord') is not None;
     access_token = app.config.get('TOKENS')['access_token']
     api_client = API2(access_token)
 
     if(discord_id is not None):
         if(campaign_id is not None):
-            campaign_members = api_client.fetch_campaign_patrons(campaign_id=campaign_id,includes=['currently_entitled_tiers','user'],fields={
-           'member':['full_name','patron_status'],'tier':['title','discord_role_ids'],'user':['social_connections']})
+            # campaign_members = api_client.fetch_campaign_patrons(campaign_id=campaign_id,includes=['currently_entitled_tiers','user'],fields={
+        #    'member':['full_name','patron_status'],'tier':['title','discord_role_ids'],'user':['social_connections']})
+            campaigns_iter=(campaign_id)
         else:
-            campaign_members=9
-        for x in campaign_members.data():
-            if(discord_id ==grab_discord_id(x.relationship('user'))):
-                return x.json_data;
-        return 'Nope';
-    return 'Nope';
+            # campaign_members=api_client.fetch_campaign_v2(includes=request.json.get('include',None),fields=request.json.get('fields',None))
+            campaigns = api_client.get_campaigns(10)
+            campaigns_iter = (x.id() for x in campaigns.data())
+        member_cursor=None
+
+        for campaign in campaigns_iter:
+                
+            while True:
+                campaign_members=api_client.get_campaigns_by_id_members(campaign,request.values.get('page_size',100),cursor=member_cursor,includes=includes,fields=fields)
+                for x in campaign_members.data():
+                    if(has_discord(x.relationship('user')) and discord_id ==grab_discord_id(x.relationship('user'))):
+                        return x.json_data;
+                # answer=more-itertools.first_true(campaign_members.data(),default=None,pred=lambda x: has_discord(x.relationship('user')) and discord_id ==grab_discord_id(x.relationship('user')))
+                # if(answer is not None):
+                #     return answer.json_data;
+                # if the default page size for grabbing members was enough
+                if('links' not in campaign_members.json_data):
+                    break;
+                else:
+                    try:
+                        member_cursor=api_client.extract_cursor(campaign_members)
+                    except:
+                        break;
+
+        return 'Cannot find member';
+    return 'Cannot find member';
     
 def find_by_patron_id(patron_id,includes=['currently_entitled_tiers'],fields={'tier':['title','description'],'member':['full_name','patron_status']}):
     access_token = app.config.get('TOKENS')['access_token']
