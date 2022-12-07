@@ -57,11 +57,8 @@ def find_by_discord_id():
 
     if(discord_id is not None):
         if(campaign_id is not None):
-            # campaign_members = api_client.fetch_campaign_patrons(campaign_id=campaign_id,includes=['currently_entitled_tiers','user'],fields={
-        #    'member':['full_name','patron_status'],'tier':['title','discord_role_ids'],'user':['social_connections']})
             campaigns_iter=(campaign_id)
         else:
-            # campaign_members=api_client.fetch_campaign_v2(includes=request.json.get('include',None),fields=request.json.get('fields',None))
             campaigns = api_client.get_campaigns(10)
             campaigns_iter = (x.id() for x in campaigns.data())
         member_cursor=None
