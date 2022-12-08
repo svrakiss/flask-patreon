@@ -105,8 +105,11 @@ def get_campaign_members():
     return [x.json_data for x in member_response.data()]
 
 def grab_token():
-    return app.config.get('TOKENS')['access_token']
-
+    access_token = request.values.get('access_token',None)
+    if(access_token is None):
+        access_token = request.headers.get('Authorization', '').partition(' ')[2]
+    # return app.config.get('TOKENS')['access_token']
+    return access_token
 
 def make_authorization_url():
 	# Generate a random string for the state parameter
