@@ -1,7 +1,9 @@
 import patreon
-from flask import request
+from flask import request, jsonify
 from __init__ import app;
 from apiv2 import API2;
+from patreon.jsonapi.parser import JSONAPIParser, JSONAPIResource
+
 REDIRECT_URI = "http://localhost:65010/v2/oauth/redirect"
 @app.route('/v2/oauth/redirect',endpoint='xxxx',methods=['GET','POST'])
 def oauth_redirect():
@@ -23,7 +25,7 @@ def auth_resource():
 def homepage():
 	return "Hi"
 
-@app.route('/member/',methods=['GET'])
+@app.route('/member/',methods=['GET','POST'])
 def find_by_discord_id():
     discord_id=request.values.get('discord_id',None)
     patron_id=request.values.get('patron_id',None)
@@ -60,6 +62,8 @@ def find_by_discord_id():
             campaigns_iter=(campaign_id)
         else:
             campaigns = api_client.get_campaigns(10)
+            if  not isinstance(campaigns,JSONAPIParser):
+                return campaigns
             campaigns_iter = (x.id() for x in campaigns.data())
         member_cursor=None
 
@@ -69,7 +73,7 @@ def find_by_discord_id():
                 campaign_members=api_client.get_campaigns_by_id_members(campaign,request.values.get('page_size',100),cursor=member_cursor,includes=includes,fields=fields)
                 for x in campaign_members.data():
                     if(has_discord(x.relationship('user')) and discord_id ==grab_discord_id(x.relationship('user'))):
-                        return x.json_data;
+                        return parseJSONAPI(x);
                 # answer=more-itertools.first_true(campaign_members.data(),default=None,pred=lambda x: has_discord(x.relationship('user')) and discord_id ==grab_discord_id(x.relationship('user')))
                 # if(answer is not None):
                 #     return answer.json_data;
@@ -89,20 +93,56 @@ def find_by_patron_id(patron_id,includes=['currently_entitled_tiers'],fields={'t
     access_token = grab_token()
     api_client = API2(access_token)
     member_response=api_client.fetch_patron_by_id(member_id=patron_id,includes=includes,fields=fields)
+    if  not isinstance(member_response,JSONAPIParser):
+        return member_response
 
-    return member_response.data().json_data
+    return parseJSONAPI(member_response.data())
 
 
-@app.route('/campaign/members')
+@app.route('/campaign/members',methods=['GET','POST'])
 def get_campaign_members():
     access_token = grab_token()
+    # print(access_token)
+    print("yo1")
     api_client = API2(access_token)
     if request.is_json:
+        # print("yo json")
         member_response = api_client.fetch_campaign_patrons(campaign_id=request.values.get('campaign_id'),includes=request.json.get('include',None)
         ,fields=request.json.get('fields',None));
     else:
         member_response = api_client.fetch_campaign_patrons(campaign_id=request.values.get('campaign_id'))
-    return [x.json_data for x in member_response.data()]
+    if  not isinstance(member_response,JSONAPIParser):
+        return member_response
+    # return [x.json_data for x in member_response.data()]
+    return jsonify([ parseJSONAPI(x) for x in member_response.data()])
+
+def parseJSONAPI(member:JSONAPIResource):
+    patron = dict();
+    grab_discord_id = lambda x: x.attribute('social_connections').get('discord').get('user_id',None)
+    has_discord = lambda x: x.attribute('social_connections').get('discord') is not None;
+
+    if(member.attribute("patron_status") is None):
+        # this is probably the creator
+        patron['status']="override"
+    else:
+        patron['status'] = member.attribute("patron_status")
+        if(member.relationship("currently_entitled_tiers") is not None):
+            if(member.relationship("currently_entitled_tiers")[0].attribute('title') is not None):
+                patron['tier'] = [ x.attribute('title') for x in member.relationship("currently_entitled_tiers")]
+                print(member.relationship("currently_entitled_tiers")[0].attribute('title'))
+    if(member.relationship('user') is not None):
+        if(member.relationship('user').attribute('social_connections') is not None):
+            if(has_discord(member.relationship('user'))):
+                patron['discordId'] = grab_discord_id(member.relationship('user'))
+
+    if(member.attribute("full_name") is not None):
+        patron['name'] = member.attribute("full_name")
+    patron['id'] = "PATREON_" + member.id()
+    patron['patronId']=member.id()
+    patron['sortKey']="INFO"
+    return patron;
+
+
 
 def grab_token():
     access_token = request.values.get('access_token',None)
