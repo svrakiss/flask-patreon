@@ -3,7 +3,7 @@ from flask import request, jsonify
 from __init__ import app;
 from apiv2 import API2;
 from patreon.jsonapi.parser import JSONAPIParser, JSONAPIResource
-
+import itertools
 REDIRECT_URI = "http://localhost:65010/v2/oauth/redirect"
 @app.route('/v2/oauth/redirect',endpoint='xxxx',methods=['GET','POST'])
 def oauth_redirect():
@@ -106,15 +106,34 @@ def get_campaign_members():
     print("yo1")
     api_client = API2(access_token)
     if request.is_json:
-        # print("yo json")
-        member_response = api_client.fetch_campaign_patrons(campaign_id=request.values.get('campaign_id'),includes=request.json.get('include',None)
+        get_next =lambda cursor:  api_client.get_campaigns_by_id_members(request.values.get('campaign_id'),request.values.get('page_size',100), cursor=cursor, includes=request.json.get('include',None)
         ,fields=request.json.get('fields',None));
-    else:
-        member_response = api_client.fetch_campaign_patrons(campaign_id=request.values.get('campaign_id'))
+    else: 
+        get_next =lambda cursor: api_client.get_campaigns_by_id_members(request.values.get('campaign_id'), request.values.get('page_size',100),cursor=cursor)
+    member_response = get_next(None)
     if  not isinstance(member_response,JSONAPIParser):
         return member_response
-    # return [x.json_data for x in member_response.data()]
-    return jsonify([ parseJSONAPI(x) for x in member_response.data()])
+    member_response = get_all_pages(member_response,get_next,api_client.extract_cursor)
+    return [ parseJSONAPI(x) for x in member_response]
+
+def get_all_pages(member_response:JSONAPIParser, get_next,extract_cursor):
+    cursor = None
+    all_responses = member_response.data()
+    while True:
+        if('links' not in member_response.json_data):
+            return all_responses;
+        try:
+            cursor=extract_cursor(member_response)
+        except:
+            return all_responses;
+        member_response = get_next(cursor)
+        if not isinstance(member_response,JSONAPIParser):
+            return all_responses;
+        all_responses = itertools.chain(all_responses, member_response.data())
+        
+        
+
+    
 
 def parseJSONAPI(member:JSONAPIResource):
     patron = dict();
