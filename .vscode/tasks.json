@@ -21,11 +21,10 @@
 			"dockerRun": {
 				"env": {
 					"FLASK_APP": "pat_test.py",
-					"CONFIG": "myconfig.py"
+					"CONFIG": "config.py"
 				},
 				"ports": [{"hostPort":65010,"containerPort": 65010}],
 				"network": "flask-patreon_default",
-				// "networkAlias": "coolwhip",
 				"containerName": "coolwhip_2"
 			},
 			"python": {

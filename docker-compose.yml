@@ -10,4 +10,4 @@ services:
       - 65010:65010
     environment:
       - FLASK_APP=pat_test.py
-      - CONFIG=myconfig.py
+      - CONFIG=config.py

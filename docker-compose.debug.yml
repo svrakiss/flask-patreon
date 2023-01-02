@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   flaskpatreon:
-    image: flaskpatreon
+    image: flaskpatreon:latest
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -12,4 +12,9 @@ services:
       - 5678:5678
     environment:
       - FLASK_APP=pat_test.py
-      - CONFIG=myconfig.py
+      - CONFIG=config.py
+    container_name: coolwhip_2
+networks:
+  default:
+    external:
+      name: flask-patreon_default
