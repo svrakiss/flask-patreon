@@ -72,6 +72,8 @@ def find_by_discord_id():
             while True:
                 campaign_members=api_client.get_campaigns_by_id_members(campaign,request.values.get('page_size',100),cursor=member_cursor,includes=includes,fields=fields)
                 for x in campaign_members.data():
+                    if(x.relationship('user').attribute('social_connections') is None):
+                        continue
                     if(has_discord(x.relationship('user')) and discord_id ==grab_discord_id(x.relationship('user'))):
                         return parseJSONAPI(x);
                 # answer=more-itertools.first_true(campaign_members.data(),default=None,pred=lambda x: has_discord(x.relationship('user')) and discord_id ==grab_discord_id(x.relationship('user')))
