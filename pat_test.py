@@ -4,6 +4,10 @@ from __init__ import app;
 from apiv2 import API2;
 from patreon.jsonapi.parser import JSONAPIParser, JSONAPIResource
 import itertools
+import logging
+import datetime
+_log = logging.getLogger(__name__)
+_log.setLevel(level=10)
 REDIRECT_URI = "http://localhost:65010/v2/oauth/redirect"
 @app.route('/v2/oauth/redirect',endpoint='xxxx',methods=['GET','POST'])
 def oauth_redirect():
@@ -105,7 +109,8 @@ def find_by_patron_id(patron_id,includes=['currently_entitled_tiers'],fields={'t
 def get_campaign_members():
     access_token = grab_token()
     # print(access_token)
-    print("yo1")
+    # _log.info("yo1")
+    print("why " +str(datetime.datetime.utcnow()))
     api_client = API2(access_token)
     if request.is_json:
         get_next =lambda cursor:  api_client.get_campaigns_by_id_members(request.values.get('campaign_id'),request.values.get('page_size',100), cursor=cursor, includes=request.json.get('include',None)
@@ -116,7 +121,9 @@ def get_campaign_members():
     if  not isinstance(member_response,JSONAPIParser):
         return member_response
     member_response = get_all_pages(member_response,get_next,api_client.extract_cursor)
-    return [ parseJSONAPI(x) for x in member_response]
+    result =[ parseJSONAPI(x) for x in member_response]
+    print(f'sending {str(len(result))}  items')
+    return result
 
 def get_all_pages(member_response:JSONAPIParser, get_next,extract_cursor):
     cursor = None
@@ -148,9 +155,10 @@ def parseJSONAPI(member:JSONAPIResource):
     else:
         patron['status'] = member.attribute("patron_status")
         if(member.relationship("currently_entitled_tiers") is not None):
-            if(member.relationship("currently_entitled_tiers")[0].attribute('title') is not None):
-                patron['tier'] = [ x.attribute('title') for x in member.relationship("currently_entitled_tiers")]
-                print(member.relationship("currently_entitled_tiers")[0].attribute('title'))
+            if(len(member.relationship("currently_entitled_tiers"))>0):
+                if(member.relationship("currently_entitled_tiers")[0].attribute('title') is not None):
+                    patron['tier'] = [ x.attribute('title') for x in member.relationship("currently_entitled_tiers")]
+                    # print(member.relationship("currently_entitled_tiers")[0].attribute('title'))
     if(member.relationship('user') is not None):
         if(member.relationship('user').attribute('social_connections') is not None):
             if(has_discord(member.relationship('user'))):
