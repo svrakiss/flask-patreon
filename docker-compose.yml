@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   flaskpatreon:
-    image: flaskpatreon
+    image: whipcarte/flaskpatreon
     build:
       context: .
       dockerfile: ./Dockerfile

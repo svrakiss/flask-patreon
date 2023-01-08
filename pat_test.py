@@ -6,6 +6,7 @@ from patreon.jsonapi.parser import JSONAPIParser, JSONAPIResource
 import itertools
 import logging
 import datetime
+import awsgi
 _log = logging.getLogger(__name__)
 _log.setLevel(level=10)
 REDIRECT_URI = "http://localhost:65010/v2/oauth/redirect"
@@ -221,3 +222,6 @@ def is_valid_state(state):
 
 if __name__ == '__main__':
 	app.run(debug=True, port=65010)
+
+def handler(event,context):
+    return awsgi.response(app,event,context)
