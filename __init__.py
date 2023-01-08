@@ -7,4 +7,4 @@ class MyApp(Flask):
 app = MyApp()
 app.config.from_envvar('CONFIG')
 # client-side request caching (so caching the patreon api responses)
-requests_cache.install_cache('github_cache',backend=app.config['REQUEST_CACHE_BACKEND'],expire_after=app.config['REQUEST_CACHE_TIMEOUT'])
+# requests_cache.install_cache('github_cache',backend=app.config['REQUEST_CACHE_BACKEND'],expire_after=app.config['REQUEST_CACHE_TIMEOUT'])

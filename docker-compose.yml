@@ -11,3 +11,11 @@ services:
     environment:
       - FLASK_APP=pat_test.py
       - CONFIG=config.py
+  flaskpatreon_aws:
+    image: whipcarte/flaskpatreon:aws
+    build:
+      context: .
+      dockerfile: ./Dockerfile-2.Dockerfile
+    environment:
+      - FLASK_APP=pat_test.py
+      - CONFIG=config.py

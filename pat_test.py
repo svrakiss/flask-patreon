@@ -109,7 +109,7 @@ def find_by_patron_id(patron_id,includes=['currently_entitled_tiers'],fields={'t
 @app.route('/campaign/members',methods=['GET','POST'])
 def get_campaign_members():
     access_token = grab_token()
-    # print(access_token)
+    print(access_token)
     # _log.info("yo1")
     print("why " +str(datetime.datetime.utcnow()))
     api_client = API2(access_token)
