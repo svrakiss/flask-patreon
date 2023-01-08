@@ -16,7 +16,8 @@
                         "remoteRoot": "/app"
                     }
                 ],
-                "projectType": "flask"
+                "projectType": "flask",
+                "justMyCode": false
             }
         }
     ]

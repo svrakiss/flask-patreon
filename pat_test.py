@@ -140,9 +140,6 @@ def get_all_pages(member_response:JSONAPIParser, get_next,extract_cursor):
             return all_responses;
         all_responses = itertools.chain(all_responses, member_response.data())
         
-        
-
-    
 
 def parseJSONAPI(member:JSONAPIResource):
     patron = dict();
@@ -171,8 +168,31 @@ def parseJSONAPI(member:JSONAPIResource):
     patron['sortKey']="INFO"
     return patron;
 
+@app.route('/webhook')
+def create_webhook():
+    token = grab_token();
+    api = API2(token);
+   
+    response =api.create_webhook(request.json.get('triggers',['members:create','members:update']),request.json.get('uri','http://localhost:65010/webhook/callback')
+    ,campaign_id=request.json.get('campaign_id','3793891'))
+    if not isinstance(response,JSONAPIParser):
+        return response;
+    
+    print(
+response.data()
+    )
+    return response.json_data;
 
+@app.route('/webhook/callback')
+def webhook_callback():
+    sign = request.headers.get('X-Patreon-Signature')
+    print(sign)
+    member =JSONAPIParser(request.json)
 
+    result =  parseJSONAPI(member.data())
+ # type: ignore
+    print(result)
+    return result
 def grab_token():
     access_token = request.values.get('access_token',None)
     if(access_token is None):
