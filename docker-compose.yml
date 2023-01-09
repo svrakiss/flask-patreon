@@ -10,7 +10,12 @@ services:
       - 65010:65010
     environment:
       - FLASK_APP=pat_test.py
-      - CONFIG=config.py
+      - CONFIG=aws_config.py
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    container_name: coolwhip_2
+    depends_on:
+      - redis
   flaskpatreon_aws:
     image: whipcarte/flaskpatreon:aws
     build:
@@ -18,4 +23,18 @@ services:
       dockerfile: ./Dockerfile-2.Dockerfile
     environment:
       - FLASK_APP=pat_test.py
-      - CONFIG=config.py
+      - CONFIG=aws_config.py
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+  redis:
+    image: redis/redis-stack
+    container_name: redis
+    ports:
+    - 6379:6379
+    - 8001:8001
+networks:
+  default:
+    external:
+      name: flask-patreon_default
