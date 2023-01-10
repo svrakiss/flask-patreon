@@ -24,7 +24,7 @@
 #    See the documentation for each action used below for the recommended IAM policies for this IAM user,
 #    and best practices on handling the access key credentials.
 
-name: Deploy to Amazon ECS
+name: Deploy to Amazon Lambda
 
 on:
   push:
@@ -33,13 +33,7 @@ on:
 env:
   AWS_REGION: us-east-1                   # set this to your preferred AWS region, e.g. us-west-1
   ECR_REPOSITORY: flask-patreon           # set this to your Amazon ECR repository name
-  ECS_SERVICE: MY_ECS_SERVICE                 # set this to your Amazon ECS service name
-  ECS_CLUSTER: MY_ECS_CLUSTER                 # set this to your Amazon ECS cluster name
-  ECS_TASK_DEFINITION: MY_ECS_TASK_DEFINITION # set this to the path to your Amazon ECS task definition
-                                               # file, e.g. .aws/task-definition.json
-  CONTAINER_NAME: MY_CONTAINER_NAME           # set this to the name of the container in the
-                                               # containerDefinitions section of your task definition
-
+  FUNCTION_NAME: PatreonStack-lambdalithHandlerA7E51B4B-269ePsnYt7b4
 permissions:
   contents: read
 
@@ -84,11 +78,11 @@ jobs:
     #     task-definition: ${{ env.ECS_TASK_DEFINITION }}
     #     container-name: ${{ env.CONTAINER_NAME }}
     #     image: ${{ steps.build-image.outputs.image }}
-
-    # - name: Deploy Amazon ECS task definition
-    #   uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-    #   with:
-    #     task-definition: ${{ steps.task-def.outputs.task-definition }}
-    #     service: ${{ env.ECS_SERVICE }}
-    #     cluster: ${{ env.ECS_CLUSTER }}
-    #     wait-for-service-stability: true
+    - name: Update lambda code with new image
+      id: update-code
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+        FUNCTION_NAME: ${{env.FUNCTION_NAME}}
+      run: |
+        aws lambda update-function-code --function-name "$FUNCTION_NAME" --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
