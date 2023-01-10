@@ -10,8 +10,9 @@ app = MyApp()
 app.config.from_envvar('CONFIG')
 # client-side request caching (so caching the patreon api responses)
 if app.config['REQUEST_CACHE_BACKEND'] == 'redis':
-    backend = RedisCache(host=os.environ.get('REDIS_HOST'),
-    port=os.environ.get('REDIS_PORT'))
-    requests_cache.install_cache('github_cache',backend=backend,expire_after=app.config['REQUEST_CACHE_TIMEOUT'])
+    # backend = RedisCache(host=os.environ.get('REDIS_HOST'),
+    # port=os.environ.get('REDIS_PORT'))
+    # requests_cache.install_cache('github_cache',backend=backend,expire_after=app.config['REQUEST_CACHE_TIMEOUT'])
+    print('Oh you picked REDIS?! how exciting')
 else:
     requests_cache.install_cache('github_cache',backend=app.config['REQUEST_CACHE_BACKEND'],expire_after=app.config['REQUEST_CACHE_TIMEOUT'])
