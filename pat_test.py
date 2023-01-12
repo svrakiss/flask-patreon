@@ -118,8 +118,11 @@ def get_campaign_members():
         ,fields=request.json.get('fields',None));
     else: 
         get_next =lambda cursor: api_client.get_campaigns_by_id_members(request.values.get('campaign_id'), request.values.get('page_size',100),cursor=cursor)
+    print("about to check first response")
     member_response = get_next(None)
+
     if  not isinstance(member_response,JSONAPIParser):
+        print(f'Error {str(member_response)}')
         return member_response
     print("About to get all the pages")
     member_response = get_all_pages(member_response,get_next,api_client.extract_cursor)
