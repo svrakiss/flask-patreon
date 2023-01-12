@@ -121,6 +121,7 @@ def get_campaign_members():
     member_response = get_next(None)
     if  not isinstance(member_response,JSONAPIParser):
         return member_response
+    print("About to get all the pages")
     member_response = get_all_pages(member_response,get_next,api_client.extract_cursor)
     result =[ parseJSONAPI(x) for x in member_response]
     print(f'sending {str(len(result))}  items')
@@ -139,6 +140,7 @@ def get_all_pages(member_response:JSONAPIParser, get_next,extract_cursor):
         member_response = get_next(cursor)
         if not isinstance(member_response,JSONAPIParser):
             return all_responses;
+        print("Add page")
         all_responses = itertools.chain(all_responses, member_response.data())
         
 
