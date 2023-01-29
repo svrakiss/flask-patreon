@@ -1,5 +1,5 @@
 import patreon
-from flask import request, jsonify
+from flask import request, jsonify, make_response
 from __init__ import app;
 from apiv2 import API2;
 from patreon.jsonapi.parser import JSONAPIParser, JSONAPIResource
@@ -69,7 +69,7 @@ def find_by_discord_id():
         else:
             campaigns = api_client.get_campaigns(10)
             if  not isinstance(campaigns,JSONAPIParser):
-                return campaigns
+                return handle_error(campaigns)
             campaigns_iter = (x.id() for x in campaigns.data())
         member_cursor=None
 
@@ -77,6 +77,8 @@ def find_by_discord_id():
                 
             while True:
                 campaign_members=api_client.get_campaigns_by_id_members(campaign,request.values.get('page_size',100),cursor=member_cursor,includes=includes,fields=fields)
+                if not isinstance(campaign_members,JSONAPIParser):
+                    return handle_error(campaign_members)
                 for x in campaign_members.data():
                     if(x.relationship('user').attribute('social_connections') is None):
                         continue
@@ -102,10 +104,13 @@ def find_by_patron_id(patron_id,includes=['currently_entitled_tiers'],fields={'t
     api_client = API2(access_token)
     member_response=api_client.fetch_patron_by_id(member_id=patron_id,includes=includes,fields=fields)
     if  not isinstance(member_response,JSONAPIParser):
-        return member_response
+        return handle_error(member_response)
 
     return parseJSONAPI(member_response.data())
 
+def handle_error(arg):
+    error =arg.get('errors')[0]
+    return make_response(jsonify(error),error.get('status'))
 
 @app.route('/campaign/members',methods=['GET','POST'])
 def get_campaign_members():
@@ -118,13 +123,13 @@ def get_campaign_members():
         ,fields=request.json.get('fields',None));
     else: 
         get_next =lambda cursor: api_client.get_campaigns_by_id_members(request.values.get('campaign_id'), request.values.get('page_size',100),cursor=cursor)
-    print("about to check first response")
+    # print("about to check first response")
     member_response = get_next(None)
 
     if  not isinstance(member_response,JSONAPIParser):
         print(f'Error {str(member_response)}')
-        return member_response
-    print("About to get all the pages")
+        return handle_error(member_response)
+    # print("About to get all the pages")
     member_response = get_all_pages(member_response,get_next,api_client.extract_cursor)
     result =[ parseJSONAPI(x) for x in member_response]
     print(f'sending {str(len(result))}  items')
@@ -143,7 +148,7 @@ def get_all_pages(member_response:JSONAPIParser, get_next,extract_cursor):
         member_response = get_next(cursor)
         if not isinstance(member_response,JSONAPIParser):
             return all_responses;
-        print("Add page")
+        # print("Add page")
         all_responses = itertools.chain(all_responses, member_response.data())
         
 
@@ -182,7 +187,7 @@ def create_webhook():
     response =api.create_webhook(request.json.get('triggers',['members:create','members:update']),request.json.get('uri','http://localhost:65010/webhook/callback')
     ,campaign_id=request.json.get('campaign_id','3793891'))
     if not isinstance(response,JSONAPIParser):
-        return response;
+        return handle_error(response);
     
     print(
 response.data()
