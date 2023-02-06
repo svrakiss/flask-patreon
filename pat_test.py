@@ -21,6 +21,32 @@ def oauth_redirect():
     api_client = patreon.API(access_token)
     return 'Hey'
 
+@app.route('/user',methods=['POST'])
+def get_user():
+    access_token = grab_token()
+    api_client = API2(access_token)
+    if(request.is_json):
+        includes=request.json.get('include',[])
+        fields = request.json.get('fields',{})
+        if(len(includes) == 0):
+            includes=['currently_entitled_tiers']
+        if(len(fields)==0 or not isinstance(fields,dict)):
+            fields={
+                'member':['full_name','patron_status'],'tier':['title','discord_role_ids']}
+    else:
+        includes=['currently_entitled_tiers']
+        fields={'member':['full_name','patron_status'],'tier':['title','discord_role_ids']}
+    includes = set(includes)
+    includes.add('user')
+    fields.update({'user':set(fields.get('user',{}))})
+    fields.get('user').add('social_connections')
+
+    resp=api_client.get_identity(includes=includes,fields=fields)
+    if not isinstance(resp,JSONAPIParser):
+        return handle_error(resp)
+    return resp.json_data
+
+
 @app.route('/gimme_token',methods=['POST'])
 def auth_resource():
     oauth_client = patreon.OAuth(app.config['CLIENT_ID'], app.config['CLIENT_SECRET'])
