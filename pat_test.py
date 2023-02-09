@@ -197,7 +197,7 @@ def parseJSONAPI(member:JSONAPIResource):
         if(member.relationship('user').attribute('social_connections') is not None):
             if(has_discord(member.relationship('user'))):
                 patron['discordId'] = grab_discord_id(member.relationship('user'))
-
+        patron['userId']= member.relationship('user').id()
     if(member.attribute("full_name") is not None):
         patron['name'] = member.attribute("full_name")
     patron['id'] = "PATREON_" + member.id()
